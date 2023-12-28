@@ -2,23 +2,30 @@ import tensorflow as tf
 import os
 import glob
 import matplotlib.pyplot as plt
+import numpy as np
 
-def preprocess_image(hr_image_path, scale_factor=4):
+def preprocess_image(hr_image_path, scale_factor=4, noise_factor=0.05, contrast_factor=1.5):
     hr_image = tf.io.read_file(hr_image_path)
-    hr_image = tf.image.decode_image(hr_image, channels=3)
+    hr_image = tf.image.decode_image(hr_image, channels=3, expand_animations=False)
     hr_image.set_shape([None, None, 3])
     hr_image = tf.image.convert_image_dtype(hr_image, tf.float32)
 
-    # Get the size of the image.
-    hr_size = tf.shape(hr_image)[:2]
+    # Resize images to a consistent size (example size: [256, 256])
+    hr_image = tf.image.resize(hr_image, [256, 256])
 
-    # Create the low-resolution image by reducing the size and then scaling back up.
-    lr_size = hr_size // scale_factor
+    # Create the low-resolution image by reducing the size and scaling back up.
+    lr_size = [hr_image.shape[0] // scale_factor, hr_image.shape[1] // scale_factor]
     lr_image = tf.image.resize(hr_image, lr_size, method='area')
-    
-    # Resize the low-resolution image to match the original high-resolution size.
-    lr_image = tf.image.resize(lr_image, hr_size, method='bicubic')
-    
+    lr_image = tf.image.resize(lr_image, [256, 256], method='bicubic')
+
+    # Add noise
+    noise = tf.random.normal(shape=tf.shape(lr_image), mean=0.0, stddev=noise_factor)
+    lr_image = lr_image + noise
+    lr_image = tf.clip_by_value(lr_image, 0.0, 1.0)
+
+    # Increase contrast
+    lr_image = tf.image.adjust_contrast(lr_image, contrast_factor)
+
     return lr_image, hr_image
 
 def load_dataset(dataset_path, subset, scale_factor=4):
@@ -46,9 +53,9 @@ div2k_dataset_valid = load_dataset(div2k_valid_path, '')
 combined_dataset_train = bsd500_dataset_train.concatenate(div2k_dataset_train)
 combined_dataset_val = bsd500_dataset_val.concatenate(div2k_dataset_valid)
 
-for lr_image, hr_image in combined_dataset_train.take(2):
+for lr_image, hr_image in combined_dataset_train.take(1):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    
+
     # show low-resolution image
     axes[0].imshow(lr_image.numpy())
     axes[0].set_title("Low Resolution Image")
