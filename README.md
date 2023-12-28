@@ -9,7 +9,6 @@ DIV2K -> [download](https://www.kaggle.com/datasets/joe1995/div2k-dataset/data)
 ```
 Super-Resolution
 │  .gitignore
-│  1.txt
 │  README.md
 │  Super-Resolution.py
 │  
