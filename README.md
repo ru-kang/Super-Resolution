@@ -2,8 +2,9 @@
 ## Environment
 tensorflow==2.14.0
 ## Dataset
-[BSD500](https://www.kaggle.com/datasets/balraj98/berkeley-segmentation-dataset-500-bsds500/data)
-[DIV2K](https://www.kaggle.com/datasets/joe1995/div2k-dataset/data)
+BSD500 -> [download](https://www.kaggle.com/datasets/balraj98/berkeley-segmentation-dataset-500-bsds500/data)
+
+DIV2K -> [download](https://www.kaggle.com/datasets/joe1995/div2k-dataset/data)
 ##  Folder tree structure
 ```
 Super-Resolution
