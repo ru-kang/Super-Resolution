@@ -2,6 +2,7 @@ import tensorflow as tf
 import os
 import glob
 import matplotlib.pyplot as plt
+import random
 import numpy as np
 
 def preprocess_image(hr_image_path, scale_factor=4, noise_factor=0.05, contrast_factor=1.5):
@@ -39,30 +40,41 @@ def load_dataset(dataset_path, subset, scale_factor=4):
 
 # Paths to the dataset.
 bsd500_path = 'Data/BSD500/images'
-div2k_train_path = 'Data/DIV2K/DIV2K_train_HR'
-div2k_valid_path = 'Data/DIV2K/DIV2K_valid_HR'
+div2k_train_path = 'Data/DIV2K/DIV2K_train_HR/DIV2K_train_HR'
+div2k_valid_path = 'Data/DIV2K/DIV2K_valid_HR/DIV2K_valid_HR'
 
 # Loading the datasets.
+scale_factor = 4
+div2k_dataset_train = glob.glob(os.path.join(div2k_train_path, '*.png'))
+random.seed(123)
+div2k_dataset_test = random.sample(div2k_dataset_train, 100)
+div2k_dataset_train = [img for img in div2k_dataset_train if img not in div2k_dataset_test]
+div2k_dataset_test = tf.data.Dataset.from_tensor_slices(div2k_dataset_test)
+div2k_dataset_test = div2k_dataset_test.map(lambda x: preprocess_image(x, scale_factor))
+div2k_dataset_train = tf.data.Dataset.from_tensor_slices(div2k_dataset_train)
+div2k_dataset_train = div2k_dataset_train.map(lambda x: preprocess_image(x, scale_factor))
+
 bsd500_dataset_train = load_dataset(bsd500_path, 'train')
 bsd500_dataset_val = load_dataset(bsd500_path, 'val')
 bsd500_dataset_test = load_dataset(bsd500_path, 'test')
-div2k_dataset_train = load_dataset(div2k_train_path, '')
 div2k_dataset_valid = load_dataset(div2k_valid_path, '')
 
 # Combine the DIV2K and BSD500 datasets.
 combined_dataset_train = bsd500_dataset_train.concatenate(div2k_dataset_train)
 combined_dataset_val = bsd500_dataset_val.concatenate(div2k_dataset_valid)
+combined_dataset_test = bsd500_dataset_test.concatenate(div2k_dataset_test)
 
-for lr_image, hr_image in combined_dataset_train.take(1):
+# show images
+for lr_image, hr_image in combined_dataset_test.take(3):
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
     # show low-resolution image
-    axes[0].imshow(lr_image.numpy())
+    axes[0].imshow(np.clip(lr_image.numpy() * 255, 0, 255).astype(np.uint8))
     axes[0].set_title("Low Resolution Image")
     axes[0].axis('off')
 
     # show high-resolution image
-    axes[1].imshow(hr_image.numpy())
+    axes[1].imshow(np.clip(hr_image.numpy() * 255, 0, 255).astype(np.uint8))
     axes[1].set_title("High Resolution Image")
     axes[1].axis('off')
 

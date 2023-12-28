@@ -9,10 +9,11 @@ DIV2K -> [download](https://www.kaggle.com/datasets/joe1995/div2k-dataset/data)
 ```
 Super-Resolution
 │  .gitignore
+│  1.txt
 │  README.md
 │  Super-Resolution.py
 │  
-└─Data(Need to Download)
+└─Data
     ├─BSD500
     │  ├─ground_truth
     │  │  ├─test
@@ -51,14 +52,16 @@ Super-Resolution
     │              
     └─DIV2K
         ├─DIV2K_train_HR
-        │      0001.png
-        │      ...
-        │      0800.png
-        │      
+        │  └─DIV2K_train_HR
+        │          0001.png
+        │          ...
+        │          0800.png
+        │          
         └─DIV2K_valid_HR
-                0801.png
-                ...
-                0900.png
+            └─DIV2K_valid_HR
+                    0801.png
+                    ...
+                    0900.png
 ```
                 
 
