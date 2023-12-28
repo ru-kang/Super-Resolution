@@ -65,17 +65,17 @@ combined_dataset_val = bsd500_dataset_val.concatenate(div2k_dataset_valid)
 combined_dataset_test = bsd500_dataset_test.concatenate(div2k_dataset_test)
 
 # show images
-for lr_image, hr_image in combined_dataset_test.take(3):
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+# for lr_image, hr_image in combined_dataset_test.take(3):
+#     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
 
-    # show low-resolution image
-    axes[0].imshow(np.clip(lr_image.numpy() * 255, 0, 255).astype(np.uint8))
-    axes[0].set_title("Low Resolution Image")
-    axes[0].axis('off')
+#     # show low-resolution image
+#     axes[0].imshow(np.clip(lr_image.numpy() * 255, 0, 255).astype(np.uint8))
+#     axes[0].set_title("Low Resolution Image")
+#     axes[0].axis('off')
 
-    # show high-resolution image
-    axes[1].imshow(np.clip(hr_image.numpy() * 255, 0, 255).astype(np.uint8))
-    axes[1].set_title("High Resolution Image")
-    axes[1].axis('off')
+#     # show high-resolution image
+#     axes[1].imshow(np.clip(hr_image.numpy() * 255, 0, 255).astype(np.uint8))
+#     axes[1].set_title("High Resolution Image")
+#     axes[1].axis('off')
 
-    plt.show()
+#     plt.show()
