@@ -12,7 +12,7 @@ Super-Resolution
 │  README.md
 │  Super-Resolution.py
 │  
-└─Data
+└─Data(Need to download)
     ├─BSD500
     │  ├─ground_truth
     │  │  ├─test
