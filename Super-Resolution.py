@@ -4,6 +4,10 @@ import glob
 import matplotlib.pyplot as plt
 import random
 import numpy as np
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Conv2D, BatchNormalization, PReLU, Add, Conv2DTranspose
+
+# print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
 
 def preprocess_image(hr_image_path, scale_factor=4, noise_factor=0.05, contrast_factor=1.5):
     hr_image = tf.io.read_file(hr_image_path)
@@ -79,3 +83,53 @@ combined_dataset_test = bsd500_dataset_test.concatenate(div2k_dataset_test)
 #     axes[1].axis('off')
 
 #     plt.show()
+def build_residual_block(input_tensor):
+    residual = input_tensor
+
+    x = Conv2D(128, kernel_size=(3, 3), padding='same')(residual)
+    x = BatchNormalization()(x)
+    x = PReLU()(x)
+
+    x = Conv2D(128, kernel_size=(3, 3), padding='same')(x)
+    x = BatchNormalization()(x)
+
+    output_tensor = Add()([x, residual])
+
+    return output_tensor
+
+def build_generator(input_shape):
+    input_layer = Input(shape=input_shape)
+
+    x = Conv2D(128, kernel_size=(3, 3), padding='same')(input_layer)
+    x = PReLU()(x)
+
+    for _ in range(8):
+        x = build_residual_block(x)
+
+    x = Conv2D(512, kernel_size=(3, 3), padding='same')(x)
+    x = Conv2DTranspose(256, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
+    x = PReLU()(x)
+
+    x = Conv2DTranspose(128, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
+    x = PReLU()(x)
+
+    output_layer = Conv2D(3, kernel_size=(3, 3), activation='tanh', padding='same')(x)
+
+    model = Model(inputs=input_layer, outputs=output_layer, name='generator')
+
+    return model
+
+input_shape = (256, 256, 3)
+generator = build_generator(input_shape)
+# 取出組合訓練數據集中的低解析度圖像
+for lr_image, _ in combined_dataset_train.take(3):
+    # 將低解析度圖像輸入到生成器中
+    generated_hr_image = generator.predict(tf.expand_dims(lr_image, 0))
+
+    # 展示生成的高解析度圖像
+    plt.imshow(np.clip(generated_hr_image[0] * 255, 0, 255).astype(np.uint8))
+    plt.title("Generated High Resolution Image")
+    plt.axis('off')
+    plt.show()
+generator.summary()
+
