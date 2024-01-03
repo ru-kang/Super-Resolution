@@ -43,13 +43,25 @@ def load_dataset(dataset_path, subset, scale_factor=4):
     return dataset
 
 def build_residual_block(input_tensor):
+    # residual = input_tensor
+
+    # x = Conv2D(128, kernel_size=(3, 3), padding='same')(residual)
+    # x = BatchNormalization()(x)
+    # x = PReLU()(x)
+
+    # x = Conv2D(128, kernel_size=(3, 3), padding='same')(x)
+    # x = BatchNormalization()(x)
+
+    # output_tensor = Add()([x, residual])
+
+    # return output_tensor
     residual = input_tensor
 
-    x = Conv2D(128, kernel_size=(3, 3), padding='same')(residual)
+    x = Conv2D(64, kernel_size=(3, 3), padding='same')(residual)
     x = BatchNormalization()(x)
     x = PReLU()(x)
 
-    x = Conv2D(128, kernel_size=(3, 3), padding='same')(x)
+    x = Conv2D(64, kernel_size=(3, 3), padding='same')(x)
     x = BatchNormalization()(x)
 
     output_tensor = Add()([x, residual])
@@ -57,22 +69,42 @@ def build_residual_block(input_tensor):
     return output_tensor
 
 def build_generator(input_shape):
+    # input_layer = Input(shape=input_shape)
+
+    # x = Conv2D(128, kernel_size=(3, 3), padding='same')(input_layer)
+    # x = PReLU()(x)
+
+    # for _ in range(8):
+    #     x = build_residual_block(x)
+
+    # x = Conv2D(512, kernel_size=(3, 3), padding='same')(x)
+    # x = Conv2DTranspose(256, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
+    # x = PReLU()(x)
+
+    # x = Conv2DTranspose(128, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
+    # x = PReLU()(x)
+
+    # output_layer = Conv2D(3, kernel_size=(3, 3), activation='tanh', padding='same')(x)
+
+    # model = Model(inputs=input_layer, outputs=output_layer, name='generator')
+
+    # return model
     input_layer = Input(shape=input_shape)
 
-    x = Conv2D(128, kernel_size=(3, 3), padding='same')(input_layer)
+    x = Conv2D(64, kernel_size=(9, 9), padding='same')(input_layer)
     x = PReLU()(x)
 
-    for _ in range(2):
+    for _ in range(8):
         x = build_residual_block(x)
 
-    x = Conv2D(512, kernel_size=(3, 3), padding='same')(x)
+    x = Conv2D(256, kernel_size=(3, 3), padding='same')(x)
     x = Conv2DTranspose(256, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
     x = PReLU()(x)
 
-    x = Conv2DTranspose(128, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
+    x = Conv2DTranspose(256, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
     x = PReLU()(x)
 
-    output_layer = Conv2D(3, kernel_size=(3, 3), activation='tanh', padding='same')(x)
+    output_layer = Conv2D(3, kernel_size=(9, 9), activation='tanh', padding='same')(x)
 
     model = Model(inputs=input_layer, outputs=output_layer, name='generator')
 
@@ -80,17 +112,22 @@ def build_generator(input_shape):
 
 def DownSampling(input_, unit, kernel_size, strides=1, bn=True):
     x = Conv2D(unit, kernel_size=kernel_size, strides=strides, padding='same')(input_)
-    x = LeakyReLU(alpha=0.2)(x)
     if bn:
         x = BatchNormalization(momentum=0.8)(x)
+    x = LeakyReLU(alpha=0.2)(x)
     return x
 
 
 def build_discriminator(input_shape):
     input_ = Input(input_shape)
-    model = DownSampling(input_, unit= 128, kernel_size=3, bn=False)
+    model = DownSampling(input_, unit= 64, kernel_size=3, bn=False)
+    #model = DownSampling(model, unit=64, kernel_size=3, strides=2)
+    model = DownSampling(model, unit=128, kernel_size=3, strides=2)
+    #model = DownSampling(model, unit=128, kernel_size=3, strides=2)
     model = DownSampling(model, unit=256, kernel_size=3, strides=2)
-    feature = DownSampling(model, unit=256, kernel_size=3, strides=2)
+    #model = DownSampling(model, unit=256, kernel_size=3, strides=2)
+    #model = DownSampling(model, unit=512, kernel_size=3, strides=2)
+    feature = DownSampling(model, unit=512, kernel_size=3, strides=2)
     """
     model = Sequential()
 
@@ -126,9 +163,11 @@ def build_discriminator(input_shape):
     #model.add(BatchNormalization())
     #model.add(LeakyReLU(alpha=0.2))
 
-    model = AveragePooling2D()(feature)
+    #model = AveragePooling2D()(feature)
 
-    model = Flatten()(model)
+    model = Flatten()(feature)
+    # model = Dense(1024)(feature)
+    model = LeakyReLU(alpha=0.2)(model)
     output = Dense(1, activation='sigmoid')(model)
     model = Model(inputs=input_, outputs=output, name='discriminator')
 
@@ -148,9 +187,9 @@ def compile_models(generator,discriminator,fn):
     gan.compile(optimizer=Adam(learning_rate=0.0002, beta_1=0.5),loss=['binary_crossentropy','mse'],loss_weights=[0.001,1], metrics = ['accuracy'])
     return gan
 
-def train_gan(generator, discriminator, gan, fn, epochs=10000,batch_size =4):
+def train_gan(generator, discriminator, gan, fn, epochs=10000,batch_size =8):
     for epoch in range(epochs):
-        for lr_image, hr_image in combined_dataset_train.take(100):
+        for lr_image, hr_image in combined_dataset_train.take(50):
             #getnum = np.random.randint(0,train_hr.shape[0],batch_size)
             #print(lr_image.shape)
             #print(hr_image.shape)
@@ -252,9 +291,9 @@ combined_dataset_train = bsd500_dataset_train.concatenate(div2k_dataset_train)
 combined_dataset_val = bsd500_dataset_val.concatenate(div2k_dataset_valid)
 combined_dataset_test = bsd500_dataset_test.concatenate(div2k_dataset_test)
 
-combined_dataset_train = combined_dataset_train.batch(4)
-combined_dataset_val = combined_dataset_val.batch(4)
-combined_dataset_test = combined_dataset_test.batch(4)
+combined_dataset_train = combined_dataset_train.batch(8)
+combined_dataset_val = combined_dataset_val.batch(8)
+combined_dataset_test = combined_dataset_test.batch(8)
 
 #print(combined_dataset_train.take(3))
 #train_lr = []
