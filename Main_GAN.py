@@ -43,18 +43,6 @@ def load_dataset(dataset_path, subset, scale_factor=4):
     return dataset
 
 def build_residual_block(input_tensor):
-    # residual = input_tensor
-
-    # x = Conv2D(128, kernel_size=(3, 3), padding='same')(residual)
-    # x = BatchNormalization()(x)
-    # x = PReLU()(x)
-
-    # x = Conv2D(128, kernel_size=(3, 3), padding='same')(x)
-    # x = BatchNormalization()(x)
-
-    # output_tensor = Add()([x, residual])
-
-    # return output_tensor
     residual = input_tensor
 
     x = Conv2D(64, kernel_size=(3, 3), padding='same')(residual)
@@ -69,26 +57,7 @@ def build_residual_block(input_tensor):
     return output_tensor
 
 def build_generator(input_shape):
-    # input_layer = Input(shape=input_shape)
-
-    # x = Conv2D(128, kernel_size=(3, 3), padding='same')(input_layer)
-    # x = PReLU()(x)
-
-    # for _ in range(8):
-    #     x = build_residual_block(x)
-
-    # x = Conv2D(512, kernel_size=(3, 3), padding='same')(x)
-    # x = Conv2DTranspose(256, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
-    # x = PReLU()(x)
-
-    # x = Conv2DTranspose(128, kernel_size=(3, 3), strides=(2, 2), padding='same')(x)
-    # x = PReLU()(x)
-
-    # output_layer = Conv2D(3, kernel_size=(3, 3), activation='tanh', padding='same')(x)
-
-    # model = Model(inputs=input_layer, outputs=output_layer, name='generator')
-
-    # return model
+    
     input_layer = Input(shape=input_shape)
 
     x = Conv2D(64, kernel_size=(9, 9), padding='same')(input_layer)
@@ -121,52 +90,12 @@ def DownSampling(input_, unit, kernel_size, strides=1, bn=True):
 def build_discriminator(input_shape):
     input_ = Input(input_shape)
     model = DownSampling(input_, unit= 64, kernel_size=3, bn=False)
-    #model = DownSampling(model, unit=64, kernel_size=3, strides=2)
-    model = DownSampling(model, unit=128, kernel_size=3, strides=2)
-    #model = DownSampling(model, unit=128, kernel_size=3, strides=2)
-    model = DownSampling(model, unit=256, kernel_size=3, strides=2)
-    #model = DownSampling(model, unit=256, kernel_size=3, strides=2)
-    #model = DownSampling(model, unit=512, kernel_size=3, strides=2)
-    feature = DownSampling(model, unit=512, kernel_size=3, strides=2)
-    """
-    model = Sequential()
-
-    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding='same', input_shape=input_shape))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(alpha=0.2))
-    model.add(Conv2D(256, (3, 3), strides=(2, 2), padding='same'))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(alpha=0.2))
-
-    feature = model
-    feature.add(Conv2D(256, (3, 3), strides=(2, 2), padding='same'))
-    feature.add()
-    """
-    """
-    model = Sequential([
-        Conv2D(128, (3, 3), strides=(2, 2), padding='same', input_shape=input_shape),
-        LeakyReLU(alpha=0.2),
-        Conv2D(256, (3, 3), strides=(2, 2), padding='same'),
-        BatchNormalization(),
-        LeakyReLU(alpha=0.2),
-        AveragePooling2D(),
-        Flatten(),
-        Dense(1, activation='sigmoid')
-    ])
-    """
-    # 光玄大帥哥
-    # model.add(Conv2D(512, (3, 3), strides=(2, 2), padding='same'))
-    # model.add(BatchNormalization())
-    # model.add(LeakyReLU(alpha=0.2))
     
-    #model.add(Conv2D(1024, (3, 3), strides=(2, 2), padding='same'))
-    #model.add(BatchNormalization())
-    #model.add(LeakyReLU(alpha=0.2))
-
-    #model = AveragePooling2D()(feature)
+    model = DownSampling(model, unit=128, kernel_size=3, strides=2)
+    model = DownSampling(model, unit=256, kernel_size=3, strides=2)
+    feature = DownSampling(model, unit=512, kernel_size=3, strides=2)
 
     model = Flatten()(feature)
-    # model = Dense(1024)(feature)
     model = LeakyReLU(alpha=0.2)(model)
     output = Dense(1, activation='sigmoid')(model)
     model = Model(inputs=input_, outputs=output, name='discriminator')
@@ -187,36 +116,31 @@ def compile_models(generator,discriminator,fn):
     gan.compile(optimizer=Adam(learning_rate=0.0002, beta_1=0.5),loss=['binary_crossentropy','mse'],loss_weights=[0.001,1], metrics = ['accuracy'])
     return gan
 
-def train_gan(generator, discriminator, gan, fn, epochs=10000,batch_size =8):
+def train_gan(generator, discriminator, gan, fn, epochs=100,batch_size =8):
+    
     for epoch in range(epochs):
         for lr_image, hr_image in combined_dataset_train.take(50):
-            #getnum = np.random.randint(0,train_hr.shape[0],batch_size)
-            #print(lr_image.shape)
-            #print(hr_image.shape)
             gen_images = generator.predict(lr_image)
             high_images = hr_image 
             labels_high = np.ones((batch_size,1))
             labels_low = np.zeros((batch_size,1))
             
-            #high_images=np.reshape(high_images,(1,high_images.shape[0],high_images.shape[1],high_images.shape[2]))
             d_loss_high = discriminator.train_on_batch(high_images, labels_high)
             d_loss_low = discriminator.train_on_batch(gen_images, labels_low)
             d_loss = 0.5*np.add(d_loss_high,d_loss_low)
 
-            #geninput = train_lr[getnum]
+
             labels_gan = np.ones((batch_size,1))
-            #lr_image=np.reshape(lr_image,(1,lr_image.shape[0],lr_image.shape[1],lr_image.shape[2]))
             image_features = fn(high_images)
-            #print(type(image_features))
             g_loss = gan.train_on_batch(lr_image,[labels_gan, image_features])
 
         print(f"{epoch} [D Loss: {d_loss}] [G Loss: {g_loss}]")
 
+        loss.append(g_loss[0])
         count_test = 0
         
-        # 取出組合訓練數據集中的低解析度圖像
+        # 取出組合測試數據集中的圖像(拿五張)
         for lr_image, hr_image in combined_dataset_test.take(5):
-            # 將低解析度圖像輸入到生成器中
             generated_hr_image = generator.predict(lr_image)
             fig, axes = plt.subplots(1, 3, figsize=(10, 5))
             # show gen-resolution image
@@ -239,9 +163,8 @@ def train_gan(generator, discriminator, gan, fn, epochs=10000,batch_size =8):
         
         count_train = 0
         
-        # 取出組合訓練數據集中的低解析度圖像
+        # 取出組合訓練數據集中的圖像(拿五張)
         for lr_image, hr_image in combined_dataset_train.take(5):
-            # 將低解析度圖像輸入到生成器中
             generated_hr_image = generator.predict(lr_image)
             fig, axes = plt.subplots(1, 3, figsize=(10, 5))
             # show gen-resolution image
@@ -261,6 +184,19 @@ def train_gan(generator, discriminator, gan, fn, epochs=10000,batch_size =8):
             plt.savefig(img_file)
             plt.close()
             count_train = count_train+1
+        
+        # 輸出訓練過程
+        if((epoch%10 ==0)or(epoch<=20)):
+            for lr_image, hr_image in combined_dataset_test.take(1):
+                generated_hr_image = generator.predict(lr_image)
+                # show gen-resolution image
+                plt.imshow(np.clip(generated_hr_image[0] * 255, 0, 255).astype(np.uint8))
+                plt.title("Generated High Resolution Image")
+                plt.axis('off')
+
+                img_file = os.path.join('deepLearningClassGAN/gen_time', 'gen_'+str(epoch)+".png")
+                plt.savefig(img_file)
+                plt.close()
 
 
 # Paths to the dataset.
@@ -295,60 +231,23 @@ combined_dataset_train = combined_dataset_train.batch(8)
 combined_dataset_val = combined_dataset_val.batch(8)
 combined_dataset_test = combined_dataset_test.batch(8)
 
-#print(combined_dataset_train.take(3))
-#train_lr = []
-#train_hr = []
-#for lr_image, hr_image in combined_dataset_train:
-    
-#    train_lr.append(lr_image)
-#    train_hr.append(hr_image)
-
-#train_lr = np.asarray(train_lr)
-#train_hr = np.asarray(train_hr)
 
 g_input_shape = (64, 64, 3)
 generator = build_generator(g_input_shape)
 
-# 取出組合訓練數據集中的低解析度圖像
-
-
-#generator.summary()
-
 d_input_shape = (256,256, 3)
 discriminator, fn = build_discriminator(d_input_shape)
-
+loss = []
 gan = compile_models(generator,discriminator,fn)
 
 train_gan(generator, discriminator, gan, fn)
-"""
-# 取出組合訓練數據集中的低解析度圖像
-for lr_image, _ in combined_dataset_train.take(3):
-    # 將低解析度圖像輸入到生成器中
-    generated_hr_image = generator.predict(tf.expand_dims(lr_image, 0))
-
-    # 展示生成的高解析度圖像
-    plt.imshow(np.clip(generated_hr_image[0] * 255, 0, 255).astype(np.uint8))
-    plt.title("Generated High Resolution Image")
-    plt.axis('off')
-    img_file = os.path.join('deepLearningClassGAN/test', '1'+".png")
-    plt.savefig(img_file)
-    plt.close()
-"""
 
 
+# 繪製損失曲線
 
-"""
- #show images
-for lr_image, hr_image in combined_dataset_test.take(3):
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    # show low-resolution image
-    axes[0].imshow(np.clip(lr_image.numpy() * 255, 0, 255).astype(np.uint8))
-    axes[0].set_title("Low Resolution Image")
-    axes[0].axis('off')
-    # show high-resolution image
-    axes[1].imshow(np.clip(hr_image.numpy() * 255, 0, 255).astype(np.uint8))
-    axes[1].set_title("High Resolution Image")
-    axes[1].axis('off')
-    plt.show()
-
-"""
+plt.plot(loss)
+plt.title('Training Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.savefig('./deepLearningClassGAN/losscurve/train_loss.png')
+plt.show()
