@@ -63,4 +63,12 @@ Super-Resolution
                     0900.png
 ```
                 
+##  Training proccess
+![image]([picture or gif url](https://github.com/ru-kang/Super-Resolution/blob/master/Result/precess_timelapse.gif)https://github.com/ru-kang/Super-Resolution/blob/master/Result/precess_timelapse.gif)
 
+## Results
+![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/result1.png)
+![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/result2.png)
+![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/result3.png)
+![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/result4.png)
+![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/result5.png)
