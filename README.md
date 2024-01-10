@@ -64,7 +64,7 @@ Super-Resolution
 ```
                 
 ##  Training proccess
-![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/precess_timelapse.gif)https://github.com/ru-kang/Super-Resolution/blob/master/Result/precess_timelapse.gif)
+![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/precess_timelapse.gif)
 
 ## Results
 ![image](https://github.com/ru-kang/Super-Resolution/blob/master/Result/result1.png)
